@@ -1,4 +1,4 @@
-﻿namespace Sharpiler1
+﻿namespace Sharpiler
 {
     public class LexicalException : Exception
     {

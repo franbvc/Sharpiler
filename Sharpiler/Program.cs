@@ -2,7 +2,7 @@
 
 
 // usar throw ou raise para avisar erro
-namespace Sharpiler1
+namespace Sharpiler
 {
     class Analysis
     {
