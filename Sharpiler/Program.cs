@@ -1,38 +1,57 @@
 ﻿using System;
-
+using System.Text.RegularExpressions;
 
 // usar throw ou raise para avisar erro
 namespace Sharpiler
 {
     class Analysis
     {
-        public static readonly Char[] AvailableTokens =
-        {
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', ' '
-        };
-
-        public static readonly Char[] AvailableNumbers =
-        {
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-        };
-
-        public static readonly Char[] AvailableSymbols =
-        {
-            '+', '-'
-        };
-
-        private string _inputCode;
+        private readonly string _inputCode;
+        readonly Grammar _grammar = new Grammar();
 
         public Analysis(string code)
         {
-            _inputCode = code.Replace(" ", "");
+            _inputCode = code;
+        }
+
+        public string[] ParseInput(string code)
+        {
+            List<string> parsedInputArray = new List<string>();
+            bool lastWasNumber = false;
+
+            foreach (char c in code)
+            {
+                if (_grammar.AvailableNumbers.Contains(c))
+                {
+                    if (lastWasNumber && parsedInputArray.Count >= 1)
+                    {
+                        parsedInputArray[^1] += c;
+                    }
+                    else
+                    {
+                        parsedInputArray.Add(Char.ToString(c));
+                    }
+
+                    lastWasNumber = true;
+                    continue;
+                }
+
+                lastWasNumber = false;
+
+                if (_grammar.AvailableSymbols.Contains(c))
+                {
+                    parsedInputArray.Add(Char.ToString(c));
+                }
+            }
+
+            return parsedInputArray.ToArray();
         }
 
         public bool Lexical()
         {
             foreach (char c in _inputCode)
             {
-                if (AvailableTokens.Contains(c))
+                if (_grammar.Vocabulary.Contains(c))
                 {
                     continue;
                 }
@@ -45,17 +64,26 @@ namespace Sharpiler
 
         public bool Syntax()
         {
-            if (AvailableSymbols.Contains(_inputCode[0]) ||
-                AvailableSymbols.Contains(_inputCode[_inputCode.Length - 1]))
+            string[] parsedInput = ParseInput(_inputCode);
+
+            if (_grammar.AvailableSymbols.Contains(parsedInput[0][0]) ||
+                _grammar.AvailableSymbols.Contains(parsedInput[^1][0]))
             {
                 throw new SyntaxException("Symbol at first or last position");
             }
 
-            for (int i = 1; i < _inputCode.Length; i++)
+            for (int i = 1; i < parsedInput.Length; i++)
             {
-                if (AvailableSymbols.Contains(_inputCode[i]) && AvailableSymbols.Contains(_inputCode[i - 1]))
+                if (_grammar.AvailableSymbols.Contains(parsedInput[i][0]) &&
+                    _grammar.AvailableSymbols.Contains(parsedInput[i - 1][0]))
                 {
                     throw new SyntaxException("Consecutive Symbols");
+                }
+
+                if (_grammar.AvailableNumbers.Contains(parsedInput[i][0]) &&
+                    _grammar.AvailableNumbers.Contains(parsedInput[i - 1][0]))
+                {
+                    throw new SyntaxException("Consecutive Numbers");
                 }
             }
 
@@ -64,8 +92,10 @@ namespace Sharpiler
 
         public int Execution()
         {
-            string[] inputNumbers = _inputCode.Split(AvailableSymbols, StringSplitOptions.RemoveEmptyEntries);
-            string[] inputSymbols = _inputCode.Split(AvailableNumbers, StringSplitOptions.RemoveEmptyEntries);
+            string stripCode = _inputCode.Replace(" ", "");
+
+            string[] inputNumbers = stripCode.Split(_grammar.AvailableSymbols, StringSplitOptions.RemoveEmptyEntries);
+            string[] inputSymbols = stripCode.Split(_grammar.AvailableNumbers, StringSplitOptions.RemoveEmptyEntries);
 
             int result = Int32.Parse(inputNumbers[0]);
 
@@ -93,7 +123,3 @@ namespace Sharpiler
         }
     }
 }
-
-
-
-
