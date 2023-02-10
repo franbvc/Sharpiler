@@ -400,6 +400,7 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 .idea/*
+Sharpiler/.idea/*
 ##
 ## Visual studio for Mac
 ##
