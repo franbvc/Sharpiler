@@ -1,125 +1,61 @@
-﻿using System;
-using System.Text.RegularExpressions;
+﻿namespace Sharpiler;
 
-// usar throw ou raise para avisar erro
-namespace Sharpiler
+public class Parser
 {
-    class Analysis
+    private static Tokenizer? _tk;
+
+    private static int ParseExpression()
     {
-        private readonly string _inputCode;
-        readonly Grammar _grammar = new Grammar();
+        if (_tk == null) throw new Exception();
+        if (!_tk.IsNextInt()) throw new SyntaxException("Expression doesn't start with a Number");
+        int result = _tk.Next.Value;
 
-        public Analysis(string code)
+        while (true)
         {
-            _inputCode = code;
-        }
-
-        public string[] ParseInput(string code)
-        {
-            List<string> parsedInputArray = new List<string>();
-            bool lastWasNumber = false;
-
-            foreach (char c in code)
+            _tk.SelectNext();
+            switch (_tk.Next.Type)
             {
-                if (_grammar.AvailableNumbers.Contains(c))
-                {
-                    if (lastWasNumber && parsedInputArray.Count >= 1)
-                    {
-                        parsedInputArray[^1] += c;
-                    }
-                    else
-                    {
-                        parsedInputArray.Add(Char.ToString(c));
-                    }
+                case "PLUS":
+                    _tk.SelectNext();
+                    if (_tk.IsNextInt())
+                        result += _tk.Next.Value;
+                    else throw new SyntaxException("Wrong token order");
 
-                    lastWasNumber = true;
                     continue;
-                }
 
-                lastWasNumber = false;
+                case "MINUS":
+                    _tk.SelectNext();
+                    if (_tk.IsNextInt())
+                        result -= _tk.Next.Value;
+                    else throw new SyntaxException("Wrong token order");
 
-                if (_grammar.AvailableSymbols.Contains(c))
-                {
-                    parsedInputArray.Add(Char.ToString(c));
-                }
-            }
-
-            return parsedInputArray.ToArray();
-        }
-
-        public bool Lexical()
-        {
-            foreach (char c in _inputCode)
-            {
-                if (_grammar.Vocabulary.Contains(c))
-                {
                     continue;
-                }
 
-                throw new LexicalException(String.Format("Invalid char '{0}'", c));
+                case "EOF":
+                    return result;
+
+                default:
+                    throw new SyntaxException("Wrong token order");
             }
-
-            return true;
-        }
-
-        public bool Syntax()
-        {
-            string[] parsedInput = ParseInput(_inputCode);
-
-            if (_grammar.AvailableSymbols.Contains(parsedInput[0][0]) ||
-                _grammar.AvailableSymbols.Contains(parsedInput[^1][0]))
-            {
-                throw new SyntaxException("Symbol at first or last position");
-            }
-
-            for (int i = 1; i < parsedInput.Length; i++)
-            {
-                if (_grammar.AvailableSymbols.Contains(parsedInput[i][0]) &&
-                    _grammar.AvailableSymbols.Contains(parsedInput[i - 1][0]))
-                {
-                    throw new SyntaxException("Consecutive Symbols");
-                }
-
-                if (_grammar.AvailableNumbers.Contains(parsedInput[i][0]) &&
-                    _grammar.AvailableNumbers.Contains(parsedInput[i - 1][0]))
-                {
-                    throw new SyntaxException("Consecutive Numbers");
-                }
-            }
-
-            return true;
-        }
-
-        public int Execution()
-        {
-            string stripCode = _inputCode.Replace(" ", "");
-
-            string[] inputNumbers = stripCode.Split(_grammar.AvailableSymbols, StringSplitOptions.RemoveEmptyEntries);
-            string[] inputSymbols = stripCode.Split(_grammar.AvailableNumbers, StringSplitOptions.RemoveEmptyEntries);
-
-            int result = Int32.Parse(inputNumbers[0]);
-
-            for (int i = 1; i < inputNumbers.Length; i++)
-            {
-                if (inputSymbols[i - 1] == "+")
-                {
-                    result += Int32.Parse(inputNumbers[i]);
-                }
-                else result -= Int32.Parse(inputNumbers[i]);
-            }
-
-            return result;
         }
     }
 
-    class Test
+    public static int Run(string code)
     {
-        static void Main(string[] args)
-        {
-            Analysis checker = new Analysis(args[0]);
-            checker.Lexical();
-            checker.Syntax();
-            Console.WriteLine(checker.Execution());
-        }
+        _tk = new Tokenizer(code);
+        _tk.SelectNext();
+        return ParseExpression();
     }
 }
+
+class Test
+{
+
+    static void Main(string[] args)
+    {
+        Console.WriteLine(Parser.Run(args[0]));
+    }
+
+}
+
+    
