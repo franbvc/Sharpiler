@@ -20,3 +20,11 @@
     * O arquivo .exe estará na pasta `bin\Debug\net7.0\Sharpiler1.exe`
     * Para rodar o .exe, rodar o comando `.\bin\Debug\net7.0\Sharpiler1.exe "<ARGS>"`
         * Exemplo: `.\bin\Debug\net7.0\Sharpiler1.exe "4+5"`
+
+
+# Sobre o projeto
+
+## Roteiro 1
+
+### Diagrama Sintático
+![Diagrama Sintático](./DS_1.png)
