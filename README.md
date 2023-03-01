@@ -36,7 +36,7 @@ expr -> num {(+|-), num}
 ## Roteiro 2
 
 ### Diagrama Sintático
-![Diagrama Sintático_2](./DS_2.png)
+![Diagrama Sintático_2](./DS_2.jpeg)
 
 ### EBNF 
 expr -> term {(+|-), term}  
