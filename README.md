@@ -28,3 +28,13 @@
 
 ### Diagrama Sintático
 ![Diagrama Sintático](./DS_1.png)
+
+### EBNF
+<expr> -> <num> {(+|-), <num>}
+
+
+## Roteiro 2
+
+### EBNF 
+<expr> -> <term> {(+|-), <term>}
+<term> -> <num> {(*|/), <num>} 
