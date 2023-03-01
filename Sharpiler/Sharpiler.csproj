@@ -10,6 +10,7 @@
   <ItemGroup>
     <Compile Remove="Token.cs" />
     <Compile Remove="Program_old.cs" />
+    <Compile Remove="TokenizerNew.cs" />
   </ItemGroup>
 
 </Project>

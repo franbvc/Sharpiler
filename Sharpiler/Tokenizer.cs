@@ -57,6 +57,14 @@ public class Tokenizer
                 Next = new Token("MINUS");
                 _position += 1;
                 return;
+            case '*':
+                Next = new Token("MULT");
+                _position += 1;
+                return;
+            case '/':
+                Next = new Token("DIV");
+                _position += 1;
+                return;
         }
 
         string currentToken = char.ToString(_source[_position]);
