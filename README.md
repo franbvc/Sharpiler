@@ -30,11 +30,14 @@
 ![Diagrama Sintático](./DS_1.png)
 
 ### EBNF
-<expr> -> <num> {(+|-), <num>}
+expr -> num {(+|-), num}  
 
 
 ## Roteiro 2
 
+### Diagrama Sintático
+![Diagrama Sintático_2](./DS_2.png)
+
 ### EBNF 
-expr -> term {(+|-), term}
+expr -> term {(+|-), term}  
 term -> num {(*|/), num} 
