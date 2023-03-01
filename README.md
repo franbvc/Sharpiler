@@ -36,5 +36,5 @@
 ## Roteiro 2
 
 ### EBNF 
-<expr> -> <term> {(+|-), <term>}
-<term> -> <num> {(*|/), <num>} 
+expr -> term {(+|-), term}
+term -> num {(*|/), num} 
