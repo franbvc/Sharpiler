@@ -4,7 +4,7 @@ namespace Sharpiler
     {
         public static readonly char[] Vocabulary =
         {
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', '*', '/', ' '
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', '*', '/','(', ')', ' '
         };
 
         public static readonly char[] Numbers =
@@ -14,7 +14,7 @@ namespace Sharpiler
 
         public static readonly char[] Symbols =
         {
-            '+', '-', '*', '/'
+            '+', '-', '('
         };
 
         public static bool ValidChar(char toTest)
@@ -26,5 +26,6 @@ namespace Sharpiler
         {
             return Numbers.Contains(toTest);
         }
+        
     }
 }

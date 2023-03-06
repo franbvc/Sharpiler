@@ -27,6 +27,11 @@ public class Tokenizer
     {
         return Next.Type == "INT";
     }
+    
+    public bool IsNextFactorSymbol()
+    {
+        return Next.Type is "INT" or "MINUS" or "PLUS" or "LPAREN";
+    }
 
     public void SelectNext()
     {
@@ -63,6 +68,14 @@ public class Tokenizer
                 return;
             case '/':
                 Next = new Token("DIV");
+                _position += 1;
+                return;
+            case '(':
+                Next = new Token("LPAREN");
+                _position += 1;
+                return;
+            case ')':
+                Next = new Token("RPAREN");
                 _position += 1;
                 return;
         }
