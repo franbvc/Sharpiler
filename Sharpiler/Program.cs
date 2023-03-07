@@ -13,7 +13,7 @@ public class Parser
         if (index >= 0) inputCode = inputCode.Substring(0, index);
     }
 
-    private static int ParseExpression()
+    private static int ParseExpression(bool isSubExpression = false)
     {
         if (_tk == null) throw new Exception();
         int result = ParseTerm();
@@ -33,7 +33,8 @@ public class Parser
                 case "EOF":
                     goto End;
                 case "RPAREN":
-                    goto End;
+                    if (isSubExpression) goto End;
+                    throw new SyntaxException("Wrong token order");
                 default:
                     throw new SyntaxException("Wrong token order");
             }
@@ -74,9 +75,9 @@ public class Parser
         switch (_tk.Next.Type)
         {
             case "INT":
-                int returnInt = _tk.Next.Value;
+                int retVal = _tk.Next.Value;
                 _tk.SelectNext();
-                return returnInt;
+                return retVal;
             case "MINUS":
                 _tk.SelectNext();
                 return -ParseFactor();
@@ -85,7 +86,7 @@ public class Parser
                 return ParseFactor();
             case "LPAREN":
                 _tk.SelectNext();
-                int result = ParseExpression();
+                int result = ParseExpression(true);
                 if (_tk.Next.Type != "RPAREN") throw new SyntaxException("Wrong token order");
                 _tk.SelectNext();
                 return result;
