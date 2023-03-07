@@ -27,10 +27,37 @@ public class Tokenizer
     {
         return Next.Type == "INT";
     }
-    
+
     public bool IsNextFactorSymbol()
     {
         return Next.Type is "INT" or "MINUS" or "PLUS" or "LPAREN";
+    }
+
+    private Token SelectInt()
+    {
+        string currentToken = char.ToString(_source[_position]);
+
+        while (true)
+        {
+            _position += 1;
+            if (_position >= _source.Length) break;
+            
+            char currentChar = _source[_position];
+            if (currentChar == ' ') break;
+            
+            if (!Grammar.ValidChar(currentChar))
+                throw new LexicalException($"Invalid char '{currentChar}'");
+            
+            if (Grammar.IsNumber(currentChar))
+            {
+                currentToken += currentChar;
+                continue;
+            }
+
+            break;
+        }
+        
+        return new Token("INT", int.Parse(currentToken));
     }
 
     public void SelectNext()
@@ -80,25 +107,6 @@ public class Tokenizer
                 return;
         }
 
-        string currentToken = char.ToString(_source[_position]);
-
-        while (true)
-        {
-            _position += 1;
-            if (_position >= _source.Length) break;
-            char currentChar = _source[_position];
-            if (currentChar == ' ') break;
-            if (!Grammar.ValidChar(currentChar))
-                throw new LexicalException($"Invalid char '{currentChar}'");
-            if (Grammar.IsNumber(currentChar))
-            {
-                currentToken += currentChar;
-                continue;
-            }
-
-            break;
-        }
-
-        Next = new Token("INT", int.Parse(currentToken));
+        Next = SelectInt();
     }
 }
