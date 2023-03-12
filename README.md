@@ -30,7 +30,7 @@
 ![Diagrama Sintático](./DS_1.png)
 
 ### EBNF
-expr -> num {(+|-), num}  
+EXPRESSION = number, { ("+" | "-"), number } ;  
 
 
 ## Roteiro 2
@@ -39,5 +39,16 @@ expr -> num {(+|-), num}
 ![Diagrama Sintático_2](./DS_2.jpeg)
 
 ### EBNF 
-expr -> term {(+|-), term}  
-term -> num {(*|/), num} 
+EXPRESSION = TERM, { ("+" | "-"), TERM } ;  
+TERM = number, { ("*" | "/"), number } ;
+
+
+## Roteiro 3
+
+### Diagrama Sintático
+![Diagrama Sintático_3](./DS_3.png)
+
+### EBNF 
+EXPRESSION = TERM, { ("+" | "-"), TERM } ;  
+TERM = FACTOR, { ("*" | "/"), FACTOR } ;  
+FACTOR = ("+" | "-") FACTOR | "(" EXPRESSION ")" | number ;
