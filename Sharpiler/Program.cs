@@ -13,10 +13,11 @@ public class Parser
         if (index >= 0) inputCode = inputCode.Substring(0, index);
     }
 
-    private static int ParseExpression(bool isSubExpression = false)
+    private static INode ParseExpression(bool isSubExpression = false)
     {
         if (_tk == null) throw new Exception();
-        int result = ParseTerm();
+        INode currentNode;
+        INode rootNode = ParseTerm();
 
         while (true)
         {
@@ -24,11 +25,14 @@ public class Parser
             {
                 case "PLUS":
                     _tk.SelectNext();
-                    result += ParseTerm();
+                    currentNode = rootNode;
+                    rootNode = new BinOp('+', new List<INode>() { currentNode, ParseTerm() });
                     continue;
+
                 case "MINUS":
                     _tk.SelectNext();
-                    result -= ParseTerm();
+                    currentNode = rootNode;
+                    rootNode = new BinOp('-', new List<INode>() { currentNode, ParseTerm() });
                     continue;
                 case "EOF":
                     goto End;
@@ -41,13 +45,14 @@ public class Parser
         }
 
         End:
-        return result;
+        return rootNode;
     }
 
-    private static int ParseTerm()
+    private static INode ParseTerm()
     {
         if (_tk == null) throw new Exception();
-        int result = ParseFactor();
+        INode currentNode;
+        INode rootNode = ParseFactor();
 
         while (true)
         {
@@ -55,19 +60,21 @@ public class Parser
             {
                 case "MULT":
                     _tk.SelectNext();
-                    result *= ParseFactor();
+                    currentNode = rootNode;
+                    rootNode = new BinOp('*', new List<INode>() { currentNode, ParseFactor() });
                     continue;
                 case "DIV":
                     _tk.SelectNext();
-                    result /= ParseFactor();
+                    currentNode = rootNode;
+                    rootNode = new BinOp('/', new List<INode>() { currentNode, ParseFactor() });
                     continue;
                 default:
-                    return result;
+                    return rootNode;
             }
         }
     }
 
-    private static int ParseFactor()
+    private static INode ParseFactor()
     {
         if (_tk == null) throw new Exception();
         if (!_tk.IsNextFactorSymbol()) throw new SyntaxException("Wrong token order");
@@ -75,18 +82,21 @@ public class Parser
         switch (_tk.Next.Type)
         {
             case "INT":
-                int retVal = _tk.Next.Value;
+                INode retVal = new IntVal(_tk.Next.Value);
                 _tk.SelectNext();
                 return retVal;
+
             case "MINUS":
                 _tk.SelectNext();
-                return -ParseFactor();
+                return new UnOp('-', new List<INode>() { ParseFactor() });
+
             case "PLUS":
                 _tk.SelectNext();
-                return ParseFactor();
+                return new UnOp('+', new List<INode>() { ParseFactor() });
+
             case "LPAREN":
                 _tk.SelectNext();
-                int result = ParseExpression(true);
+                INode result = ParseExpression(true);
                 if (_tk.Next.Type != "RPAREN") throw new SyntaxException("Wrong token order");
                 _tk.SelectNext();
                 return result;
@@ -95,7 +105,7 @@ public class Parser
         }
     }
 
-    public static int Run(string code)
+    public static INode Run(string code)
     {
         RemoveComment(ref code);
         _tk = new Tokenizer(code);
@@ -106,8 +116,25 @@ public class Parser
 
 class Test
 {
+    // static void Main(string[] args)
+    // {
+    //     INode astRoot = Parser.Run(args[0]);
+    //     Console.WriteLine(astRoot.Evaluate());
+    // }
     static void Main(string[] args)
     {
-        Console.WriteLine(Parser.Run(args[0]));
+        string filename = args[0];
+
+        try
+        {
+            string fileContents = File.ReadAllText(filename);
+            INode astRoot = Parser.Run(fileContents);
+            Console.WriteLine(astRoot.Evaluate());
+        }
+        catch (IOException e)
+        {
+            Console.WriteLine("Error reading file: " + e.Message);
+            throw;
+        }
     }
 }
