@@ -7,10 +7,30 @@ public class Parser
 {
     private static Tokenizer? _tk;
 
-    private static void RemoveComment(ref string inputCode)
+
+    private static void RemoveComment(ref string input)
     {
-        int index = inputCode.IndexOf('#');
-        if (index >= 0) inputCode = inputCode.Substring(0, index);
+        
+        int startIndex = 0;
+        while (true)
+        {
+            int hashIndex = input.IndexOf('#', startIndex);
+            if (hashIndex == -1)
+            {
+                break;
+            }
+        
+            int endIndex = input.IndexOfAny(new char[] { '\r', '\n' }, hashIndex);
+            if (endIndex == -1)
+            {
+                endIndex = input.Length;
+            }
+        
+            input = input.Remove(hashIndex, endIndex - hashIndex);
+        
+            startIndex = hashIndex;
+        }
+        
     }
 
     private static INode ParseBlock()

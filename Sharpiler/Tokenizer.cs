@@ -145,9 +145,13 @@ public class Tokenizer
         }
 
         if (Grammar.IsNumber(_source[_position]))
+        {
             Next = SelectInt();
+            return;
+        }
 
         if (Grammar.IsLetter(_source[_position]))
             Next = SelectWord();
+        
     }
 }
