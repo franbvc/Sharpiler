@@ -3,9 +3,9 @@
 public class Token
 {
     public string Type { get; set; }
-    public int Value { get; set; }
+    public dynamic Value { get; set; }
 
-    public Token(string type, int value = 0)
+    public Token(string type, dynamic value = null!)
     {
         Type = type;
         Value = value;
@@ -30,7 +30,7 @@ public class Tokenizer
 
     public bool IsNextFactorSymbol()
     {
-        return Next.Type is "INT" or "MINUS" or "PLUS" or "LPAREN";
+        return Next.Type is "INT" or "MINUS" or "PLUS" or "LPAREN" or "IDENTIFIER";
     }
 
     private Token SelectInt()
@@ -60,6 +60,32 @@ public class Tokenizer
         return new Token("INT", int.Parse(currentToken));
     }
 
+    private Token SelectWord()
+    {
+        string currentToken = char.ToString(_source[_position]);
+
+        while (true)
+        {
+            _position += 1;
+            if (_position >= _source.Length) break;
+            
+            char currentChar = _source[_position];
+            if (currentChar is ' ' or '=' or '(') break;
+            
+            if (!Grammar.ValidChar(currentChar))
+                throw new LexicalException($"Invalid char '{currentChar}'");
+
+            if (Grammar.IsIdentifierChar(currentChar))
+            {
+                currentToken += currentChar;
+                continue;
+            }
+
+            break;
+        }
+        return currentToken == "println" ? new Token("PRINT") : new Token("IDENTIFIER", currentToken);
+    }
+
     public void SelectNext()
     {
         if (_position >= _source.Length)
@@ -77,7 +103,9 @@ public class Tokenizer
         }
 
         if (!Grammar.ValidChar(_source[_position]))
+        {
             throw new LexicalException($"Invalid char '{_source[_position]}'");
+        }
 
         switch (_source[_position])
         {
@@ -105,8 +133,21 @@ public class Tokenizer
                 Next = new Token("RPAREN");
                 _position += 1;
                 return;
+            case '=':
+                Next = new Token("ASSIGN");
+                _position += 1;
+                return;
+            case '\r':
+            case '\n':
+                Next = new Token("NEWLINE");
+                _position += 1;
+                return;
         }
 
-        Next = SelectInt();
+        if (Grammar.IsNumber(_source[_position]))
+            Next = SelectInt();
+
+        if (Grammar.IsLetter(_source[_position]))
+            Next = SelectWord();
     }
 }

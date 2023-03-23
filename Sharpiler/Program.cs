@@ -13,6 +13,56 @@ public class Parser
         if (index >= 0) inputCode = inputCode.Substring(0, index);
     }
 
+    private static INode ParseBlock()
+    {
+        if (_tk == null) throw new Exception();
+        
+        INode currentNode;
+        List<INode> children = new List<INode>();
+        
+        while (true)
+        {
+            if (_tk.Next.Type == "EOF") break;
+            
+            currentNode = ParseStatement();
+            if (currentNode is not NoOp) children.Add(currentNode);
+        }
+        
+        return new Block(children);
+    }
+
+    private static INode ParseStatement()
+    {
+        if (_tk == null) throw new Exception();
+        INode currentNode;
+        
+        switch (_tk.Next.Type)
+        {
+            case "IDENTIFIER":
+                Identifier leftNode = new Identifier(_tk.Next.Value);
+                _tk.SelectNext();
+                if (_tk.Next.Type != "ASSIGN") throw new SyntaxException("Wrong token order");
+                _tk.SelectNext();
+                currentNode =  new Assignment(new List<INode>() { leftNode, ParseExpression() });
+                break;
+                
+            case "PRINT":
+                _tk.SelectNext();
+                if (_tk.Next.Type != "LPAREN") throw new SyntaxException("Wrong token order");
+                currentNode = new Print(new List<INode>(){ParseExpression(true)});
+                break;
+            
+            case "NEWLINE":
+                _tk.SelectNext();
+                return new NoOp();
+            
+            default:
+                throw new SyntaxException("Wrong token order");
+        }
+        
+        return currentNode;
+    }
+
     private static INode ParseExpression(bool isSubExpression = false)
     {
         if (_tk == null) throw new Exception();
@@ -34,11 +84,15 @@ public class Parser
                     currentNode = rootNode;
                     rootNode = new BinOp('-', new List<INode>() { currentNode, ParseTerm() });
                     continue;
+                
+                case "NEWLINE":
                 case "EOF":
                     goto End;
+
                 case "RPAREN":
                     if (isSubExpression) goto End;
                     throw new SyntaxException("Wrong token order");
+                
                 default:
                     throw new SyntaxException("Wrong token order");
             }
@@ -78,11 +132,17 @@ public class Parser
     {
         if (_tk == null) throw new Exception();
         if (!_tk.IsNextFactorSymbol()) throw new SyntaxException("Wrong token order");
+        INode retVal;
 
         switch (_tk.Next.Type)
         {
             case "INT":
-                INode retVal = new IntVal(_tk.Next.Value);
+                retVal = new IntVal(_tk.Next.Value);
+                _tk.SelectNext();
+                return retVal;
+            
+            case "IDENTIFIER":
+                retVal = new Identifier(_tk.Next.Value);
                 _tk.SelectNext();
                 return retVal;
 
@@ -110,17 +170,12 @@ public class Parser
         RemoveComment(ref code);
         _tk = new Tokenizer(code);
         _tk.SelectNext();
-        return ParseExpression();
+        return ParseBlock();
     }
 }
 
 class Test
 {
-    // static void Main(string[] args)
-    // {
-    //     INode astRoot = Parser.Run(args[0]);
-    //     Console.WriteLine(astRoot.Evaluate());
-    // }
     static void Main(string[] args)
     {
         string filename = args[0];
@@ -129,7 +184,7 @@ class Test
         {
             string fileContents = File.ReadAllText(filename);
             INode astRoot = Parser.Run(fileContents);
-            Console.WriteLine(astRoot.Evaluate());
+            astRoot.Evaluate();
         }
         catch (IOException e)
         {
