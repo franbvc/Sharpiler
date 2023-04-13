@@ -87,7 +87,7 @@ public class Tokenizer
         return currentToken switch
         {
             "println" => new Token("PRINT"),
-            "readln" => new Token("READ"),
+            "readline" => new Token("READ"),
             "while" => new Token("WHILE"),
             "end" => new Token("END"),
             "if" => new Token("IF"),
