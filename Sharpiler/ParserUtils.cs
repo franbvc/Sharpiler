@@ -15,7 +15,7 @@ public partial class Parser
 
         INode condition = ParseRelativeExpression();
         if (_tk.Next.Type != "NEWLINE") throw new SyntaxException("Wrong token order");
-        INode firstBlock = ParseBlock();
+        INode firstBlock = ParseBlock(true);
         
         if (_tk.Next.Type == "END")
         {
@@ -32,7 +32,7 @@ public partial class Parser
         
         _tk.SelectNext();
         if (_tk.Next.Type != "NEWLINE") throw new SyntaxException("Wrong token order");
-        INode elseBlock = ParseBlock();
+        INode elseBlock = ParseBlock(true);
         
         if (_tk.Next.Type != "END") throw new SyntaxException("Wrong token order");
         _tk.SelectNext();

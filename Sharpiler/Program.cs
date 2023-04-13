@@ -6,7 +6,7 @@ public partial class Parser
 {
     private static Tokenizer? _tk;
 
-    private static INode ParseBlock()
+    private static INode ParseBlock(bool isSubBlock = false)
     {
         if (_tk == null) throw new Exception();
 
@@ -15,6 +15,8 @@ public partial class Parser
 
         while (true)
         {
+            if (!isSubBlock && _tk.Next.Type == "END") throw new SyntaxException("Unmatched END");
+            if (!isSubBlock && _tk.Next.Type == "ELSE") throw new SyntaxException("Unmatched ELSE");
             if (_tk.Next.Type is "EOF" or "END" or "ELSE") break;
 
             currentNode = ParseStatement();
