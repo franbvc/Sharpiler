@@ -10,7 +10,7 @@ public static class SymbolTable
     {
         SymbolDictionary[key] = value;
     }
-    
+
     public static int Get(string key)
     {
         return SymbolDictionary[key];
@@ -39,6 +39,7 @@ class UnOp : INode
     public int Evaluate()
     {
         if (Value == '-') return -Children[0].Evaluate();
+        if (Value == '!') return (Children[0].Evaluate() == 1) ? 0 : 1;
 
         return Children[0].Evaluate();
     }
@@ -67,7 +68,7 @@ class BinOp : INode
     public dynamic Value { get; set; }
     public List<INode> Children { get; set; }
 
-    public BinOp(char value, List<INode> children)
+    public BinOp(string value, List<INode> children)
     {
         if (children.Count != 2) throw new SemanticException("BinOp: Wrong children amount");
         Value = value;
@@ -78,14 +79,24 @@ class BinOp : INode
     {
         switch (Value)
         {
-            case '+':
+            case "+":
                 return Children[0].Evaluate() + Children[1].Evaluate();
-            case '-':
+            case "-":
                 return Children[0].Evaluate() - Children[1].Evaluate();
-            case '*':
+            case "*":
                 return Children[0].Evaluate() * Children[1].Evaluate();
-            case '/':
+            case "/":
                 return Children[0].Evaluate() / Children[1].Evaluate();
+            case "&&":
+                return (Children[0].Evaluate() == 1) && (Children[1].Evaluate() == 1) ? 1 : 0;
+            case "||":
+                return (Children[0].Evaluate() == 1) || (Children[1].Evaluate() == 1) ? 1 : 0;
+            case "==":
+                return (Children[0].Evaluate() == Children[1].Evaluate()) ? 1 : 0;
+            case ">":
+                return (Children[0].Evaluate() > Children[1].Evaluate()) ? 1 : 0;
+            case "<":
+                return (Children[0].Evaluate() < Children[1].Evaluate()) ? 1 : 0;
             default:
                 throw new SemanticException("Invalid Binary Operation");
         }
@@ -167,6 +178,24 @@ class Print : INode
     }
 }
 
+class Read : INode
+{
+    public dynamic Value { get; set; }
+    public List<INode> Children { get; set; }
+
+    public Read(List<INode> children = null!, char value = ' ')
+    {
+        Value = value;
+        Children = children ?? new List<INode>();
+    }
+
+    public int Evaluate()
+    {
+        string input = Console.ReadLine() ?? throw new InvalidOperationException();
+        return int.Parse(input);
+    }
+}
+
 class Block : INode
 {
     public dynamic Value { get; set; }
@@ -181,12 +210,55 @@ class Block : INode
 
     public int Evaluate()
     {
-        // TODO: confirmar isso!
         foreach (INode child in Children)
         {
             child.Evaluate();
         }
-        
+
+        return 0;
+    }
+}
+
+class If : INode
+{
+    public dynamic Value { get; set; }
+    public List<INode> Children { get; set; }
+
+    public If(List<INode> children, char value = ' ')
+    {
+        if (children.Count != 3) throw new SemanticException("If: Wrong children amount");
+        Value = value;
+        Children = children;
+    }
+
+    public int Evaluate()
+    {
+        if (Children[0].Evaluate() == 1) Children[1].Evaluate();
+        else Children[2].Evaluate();
+
+        return 0;
+    }
+}
+
+class While : INode
+{
+    public dynamic Value { get; set; }
+    public List<INode> Children { get; set; }
+
+    public While(List<INode> children, char value = ' ')
+    {
+        if (children.Count != 2) throw new SemanticException("While: Wrong children amount");
+        Value = value;
+        Children = children;
+    }
+
+    public int Evaluate()
+    {
+        while (Children[0].Evaluate() == 1)
+        {
+            Children[1].Evaluate();
+        }
+
         return 0;
     }
 }

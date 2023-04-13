@@ -1,53 +1,26 @@
-﻿using System.Runtime.InteropServices;
-using Console = System.Console;
+﻿using Console = System.Console;
 
 namespace Sharpiler;
 
-public class Parser
+public partial class Parser
 {
     private static Tokenizer? _tk;
-
-
-    private static void RemoveComment(ref string input)
-    {
-        
-        int startIndex = 0;
-        while (true)
-        {
-            int hashIndex = input.IndexOf('#', startIndex);
-            if (hashIndex == -1)
-            {
-                break;
-            }
-        
-            int endIndex = input.IndexOfAny(new char[] { '\r', '\n' }, hashIndex);
-            if (endIndex == -1)
-            {
-                endIndex = input.Length;
-            }
-        
-            input = input.Remove(hashIndex, endIndex - hashIndex);
-        
-            startIndex = hashIndex;
-        }
-        
-    }
 
     private static INode ParseBlock()
     {
         if (_tk == null) throw new Exception();
-        
+
         INode currentNode;
         List<INode> children = new List<INode>();
-        
+
         while (true)
         {
-            if (_tk.Next.Type == "EOF") break;
-            
+            if (_tk.Next.Type is "EOF" or "END" or "ELSE") break;
+
             currentNode = ParseStatement();
             if (currentNode is not NoOp) children.Add(currentNode);
         }
-        
+
         return new Block(children);
     }
 
@@ -55,35 +28,92 @@ public class Parser
     {
         if (_tk == null) throw new Exception();
         INode currentNode;
-        
+
         switch (_tk.Next.Type)
         {
             case "IDENTIFIER":
                 Identifier leftNode = new Identifier(_tk.Next.Value);
                 _tk.SelectNext();
-                if (_tk.Next.Type != "ASSIGN") throw new SyntaxException("Wrong token order");
+                if (_tk.Next.Type != "ASSIGN")
+                    throw new SyntaxException("Wrong token order: expected ASSIGN got " + _tk.Next.Type);
                 _tk.SelectNext();
-                currentNode =  new Assignment(new List<INode>() { leftNode, ParseExpression() });
+                currentNode = new Assignment(new List<INode>() { leftNode, ParseRelativeExpression() });
                 break;
-                
+
             case "PRINT":
                 _tk.SelectNext();
                 if (_tk.Next.Type != "LPAREN") throw new SyntaxException("Wrong token order");
-                currentNode = new Print(new List<INode>(){ParseExpression(true)});
+                currentNode = new Print(new List<INode>() { ParseRelativeExpression(true) });
                 break;
-            
+
+            case "WHILE":
+                _tk.SelectNext();
+                currentNode = BuildConditionalNode(ConditionalType.While);
+                break;
+
+            case "IF":
+                _tk.SelectNext();
+                currentNode = BuildConditionalNode(ConditionalType.If);
+                break;
+
             case "NEWLINE":
                 _tk.SelectNext();
                 return new NoOp();
-            
+
             default:
                 throw new SyntaxException("Wrong token order");
         }
-        
+
         return currentNode;
     }
 
-    private static INode ParseExpression(bool isSubExpression = false)
+    private static INode ParseRelativeExpression(bool isSubExpression = false)
+    {
+        if (_tk == null) throw new Exception();
+        INode currentNode;
+        INode rootNode = ParseExpression();
+
+        while (true)
+        {
+            switch (_tk.Next.Type)
+            {
+                case "GT":
+                    _tk.SelectNext();
+                    currentNode = rootNode;
+                    rootNode = new BinOp(">", new List<INode>() { currentNode, ParseExpression() });
+                    continue;
+
+                case "LT":
+                    _tk.SelectNext();
+                    currentNode = rootNode;
+                    rootNode = new BinOp("<", new List<INode>() { currentNode, ParseExpression() });
+                    continue;
+
+                case "EQ":
+                    _tk.SelectNext();
+                    currentNode = rootNode;
+                    rootNode = new BinOp("==", new List<INode>() { currentNode, ParseExpression() });
+                    continue;
+
+                case "NEWLINE":
+                case "EOF":
+                    goto End;
+
+                case "RPAREN":
+                    if (isSubExpression) goto End;
+                    throw new SyntaxException("Wrong token order: missing ')'");
+
+                default:
+                    throw new SyntaxException("Wrong token order: got " + _tk.Next.Type +
+                                              " instead of (GT or LT or EQ)");
+            }
+        }
+
+        End:
+        return rootNode;
+    }
+
+    private static INode ParseExpression()
     {
         if (_tk == null) throw new Exception();
         INode currentNode;
@@ -96,30 +126,25 @@ public class Parser
                 case "PLUS":
                     _tk.SelectNext();
                     currentNode = rootNode;
-                    rootNode = new BinOp('+', new List<INode>() { currentNode, ParseTerm() });
+                    rootNode = new BinOp("+", new List<INode>() { currentNode, ParseTerm() });
                     continue;
 
                 case "MINUS":
                     _tk.SelectNext();
                     currentNode = rootNode;
-                    rootNode = new BinOp('-', new List<INode>() { currentNode, ParseTerm() });
+                    rootNode = new BinOp("-", new List<INode>() { currentNode, ParseTerm() });
                     continue;
-                
-                case "NEWLINE":
-                case "EOF":
-                    goto End;
 
-                case "RPAREN":
-                    if (isSubExpression) goto End;
-                    throw new SyntaxException("Wrong token order");
-                
+                case "OR":
+                    _tk.SelectNext();
+                    currentNode = rootNode;
+                    rootNode = new BinOp("||", new List<INode>() { currentNode, ParseTerm() });
+                    continue;
+
                 default:
-                    throw new SyntaxException("Wrong token order");
+                    return rootNode;
             }
         }
-
-        End:
-        return rootNode;
     }
 
     private static INode ParseTerm()
@@ -135,12 +160,17 @@ public class Parser
                 case "MULT":
                     _tk.SelectNext();
                     currentNode = rootNode;
-                    rootNode = new BinOp('*', new List<INode>() { currentNode, ParseFactor() });
+                    rootNode = new BinOp("*", new List<INode>() { currentNode, ParseFactor() });
                     continue;
                 case "DIV":
                     _tk.SelectNext();
                     currentNode = rootNode;
-                    rootNode = new BinOp('/', new List<INode>() { currentNode, ParseFactor() });
+                    rootNode = new BinOp("/", new List<INode>() { currentNode, ParseFactor() });
+                    continue;
+                case "AND":
+                    _tk.SelectNext();
+                    currentNode = rootNode;
+                    rootNode = new BinOp("&&", new List<INode>() { currentNode, ParseFactor() });
                     continue;
                 default:
                     return rootNode;
@@ -160,7 +190,7 @@ public class Parser
                 retVal = new IntVal(_tk.Next.Value);
                 _tk.SelectNext();
                 return retVal;
-            
+
             case "IDENTIFIER":
                 retVal = new Identifier(_tk.Next.Value);
                 _tk.SelectNext();
@@ -174,12 +204,26 @@ public class Parser
                 _tk.SelectNext();
                 return new UnOp('+', new List<INode>() { ParseFactor() });
 
+            case "NOT":
+                _tk.SelectNext();
+                return new UnOp('!', new List<INode>() { ParseFactor() });
+
             case "LPAREN":
                 _tk.SelectNext();
-                INode result = ParseExpression(true);
+                INode result = ParseRelativeExpression(true);
                 if (_tk.Next.Type != "RPAREN") throw new SyntaxException("Wrong token order");
                 _tk.SelectNext();
                 return result;
+
+            case "READ":
+                _tk.SelectNext();
+                if (_tk.Next.Type != "LPAREN") throw new SyntaxException("Wrong token order");
+                _tk.SelectNext();
+                INode readNode = new Read();
+                if (_tk.Next.Type != "RPAREN") throw new SyntaxException("Wrong token order");
+                _tk.SelectNext();
+                return readNode;
+
             default:
                 throw new SyntaxException("Wrong token order");
         }

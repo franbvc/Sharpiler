@@ -30,7 +30,7 @@ public class Tokenizer
 
     public bool IsNextFactorSymbol()
     {
-        return Next.Type is "INT" or "MINUS" or "PLUS" or "LPAREN" or "IDENTIFIER";
+        return Next.Type is "INT" or "MINUS" or "PLUS" or "NOT" or "LPAREN" or "IDENTIFIER" or "READ";
     }
 
     private Token SelectInt()
@@ -41,13 +41,13 @@ public class Tokenizer
         {
             _position += 1;
             if (_position >= _source.Length) break;
-            
+
             char currentChar = _source[_position];
             if (currentChar == ' ') break;
-            
+
             if (!Grammar.ValidChar(currentChar))
                 throw new LexicalException($"Invalid char '{currentChar}'");
-            
+
             if (Grammar.IsNumber(currentChar))
             {
                 currentToken += currentChar;
@@ -56,7 +56,7 @@ public class Tokenizer
 
             break;
         }
-        
+
         return new Token("INT", int.Parse(currentToken));
     }
 
@@ -68,10 +68,10 @@ public class Tokenizer
         {
             _position += 1;
             if (_position >= _source.Length) break;
-            
+
             char currentChar = _source[_position];
             if (currentChar is ' ' or '=' or '(') break;
-            
+
             if (!Grammar.ValidChar(currentChar))
                 throw new LexicalException($"Invalid char '{currentChar}'");
 
@@ -83,7 +83,17 @@ public class Tokenizer
 
             break;
         }
-        return currentToken == "println" ? new Token("PRINT") : new Token("IDENTIFIER", currentToken);
+
+        return currentToken switch
+        {
+            "println" => new Token("PRINT"),
+            "readln" => new Token("READ"),
+            "while" => new Token("WHILE"),
+            "end" => new Token("END"),
+            "if" => new Token("IF"),
+            "else" => new Token("ELSE"),
+            _ => new Token("IDENTIFIER", currentToken)
+        };
     }
 
     public void SelectNext()
@@ -134,9 +144,49 @@ public class Tokenizer
                 _position += 1;
                 return;
             case '=':
+                if (_source[_position + 1] == '=')
+                {
+                    Next = new Token("EQ");
+                    _position += 2;
+                    return;
+                }
+
                 Next = new Token("ASSIGN");
                 _position += 1;
                 return;
+            case '>':
+                Next = new Token("GT");
+                _position += 1;
+                return;
+            case '<':
+                Next = new Token("LT");
+                _position += 1;
+                return;
+            case '!':
+                Next = new Token("NOT");
+                _position += 1;
+                return;
+            case '&':
+                if (_source[_position + 1] == '&')
+                {
+                    Next = new Token("AND");
+                    _position += 2;
+                    return;
+                }
+
+                throw new LexicalException($"Invalid char '{_source[_position]}'");
+
+            case '|':
+                if (_source[_position + 1] == '|')
+                {
+                    Next = new Token("OR");
+                    _position += 2;
+                    return;
+                }
+
+                throw new LexicalException($"Invalid char '{_source[_position]}'");
+
+
             case '\r':
             case '\n':
                 Next = new Token("NEWLINE");
@@ -152,6 +202,5 @@ public class Tokenizer
 
         if (Grammar.IsLetter(_source[_position]))
             Next = SelectWord();
-        
     }
 }
