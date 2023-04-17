@@ -70,3 +70,31 @@ IDENTIFIER = LETTER, { LETTER | DIGIT | "_" } ;
 NUMBER = DIGIT, { DIGIT } ;  
 LETTER = ( a | ... | z | A | ... | Z ) ;  
 DIGIT = ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 ) ;  
+
+
+## Roteiro 6
+
+### Diagrama Sintático
+![Diagrama Sintático_5](./DS_5.drawio.png)
+
+### EBNF 
+BLOCK = { STATEMENT };  
+
+STATEMENT = ( λ | ASSIGNMENT | PRINT | WHILE | IF), "\n" ;  
+ASSIGNMENT = IDENTIFIER, "=", RELEXPRESSION ;  
+PRINT = "println", "(", RELEXPRESSION, ")" ;  
+WHILE = "while", RELEXPRESSION, "\n", BLOCK, "end" ;  
+IF = "if", RELEXPRESSION, "\n", BLOCK, (ELSE), "end" ;  
+ELSE = "else", "\n", BLOCK;
+
+READ = "readline()";  
+RELEXPRESSION = EXPRESSION, { ("==" | ">" | "<"), EXPRESSION}  
+EXPRESSION = TERM, { ("+" | "-" | "||"), TERM } ;  
+TERM = FACTOR, { ("*" | "/" | "&&"), FACTOR } ;  
+FACTOR = (("+" | "-" | "!"), FACTOR) | NUMBER | "(", RELEXPRESSION, ")" |
+         IDENTIFIER | READ;  
+
+IDENTIFIER = LETTER, { LETTER | DIGIT | "_" } ;  
+NUMBER = DIGIT, { DIGIT } ;  
+LETTER = ( a | ... | z | A | ... | Z ) ;  
+DIGIT = ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 ) ;  
