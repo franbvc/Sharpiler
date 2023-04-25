@@ -81,15 +81,24 @@ class BinOp : INode
         dynamic leftNode = Children[0].Evaluate();
         dynamic rightNode = Children[1].Evaluate();
 
-        if (leftNode is int && rightNode is string)
-            throw new SemanticException("Invalid Binary Operation (int + string)");
+        if (Value == ".") return leftNode + rightNode;
+        
+        switch (Value)
+        {
+            case ".":
+                return leftNode + rightNode;
+        }
 
-        if (leftNode is string)
-            return Value switch
-            {
-                "." => leftNode + rightNode,
-                _ => throw new SemanticException($"Invalid Binary Operation (string {Value} ...) ")
-            };
+        if (leftNode is string || rightNode is string)
+        {
+            if (Value == ">")
+                return string.Compare(leftNode.ToString(), rightNode.ToString()) >= 0 ? 1 : 0;
+            if (Value == "<")
+                return string.Compare(leftNode.ToString(), rightNode.ToString()) >= 0 ? 0 : 1;
+            if (Value == "==")
+                return leftNode.ToString() == rightNode.ToString() ? 1 : 0;
+        }
+            
 
         if (leftNode is int && rightNode is int)
             return Value switch
@@ -199,6 +208,9 @@ class VariableDeclaration : INode
     public dynamic Evaluate()
     {
         // Adiciona o valor da esquerda ao dict
+        if (SymbolTable.Contains(Children[0].Value))
+            throw new SemanticException($"VarDec: '{Children[0].Value}' type already declared in ST");
+        
         if (Children.Count == 1)
         {
             SymbolTable.Set(Children[0].Value, "_", Value);

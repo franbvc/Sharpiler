@@ -21,4 +21,9 @@ public static class SymbolTable
             throw new SemanticException($"SymbolTable: '{key}' is not defined");
         return SymbolDictionary[key].Item1;
     }
+    
+    public static bool Contains(string key)
+    {
+        return SymbolDictionary.ContainsKey(key);
+    }
 }
