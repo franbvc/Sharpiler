@@ -34,12 +34,7 @@ public partial class Parser
         switch (_tk.Next.Type)
         {
             case "IDENTIFIER":
-                Identifier leftNode = new Identifier(_tk.Next.Value);
-                _tk.SelectNext();
-                if (_tk.Next.Type != "ASSIGN")
-                    throw new SyntaxException("Wrong token order: expected ASSIGN got " + _tk.Next.Type);
-                _tk.SelectNext();
-                currentNode = new Assignment(new List<INode>() { leftNode, ParseRelativeExpression() });
+                currentNode = ParseStatementIdentifier();
                 break;
 
             case "PRINT":
@@ -95,6 +90,12 @@ public partial class Parser
                     _tk.SelectNext();
                     currentNode = rootNode;
                     rootNode = new BinOp("==", new List<INode>() { currentNode, ParseExpression() });
+                    continue;
+                
+                case "DOT":
+                    _tk.SelectNext();
+                    currentNode = rootNode;
+                    rootNode = new BinOp(".", new List<INode>() { currentNode, ParseExpression() });
                     continue;
 
                 case "NEWLINE":
@@ -183,13 +184,18 @@ public partial class Parser
     private static INode ParseFactor()
     {
         if (_tk == null) throw new Exception();
-        if (!_tk.IsNextFactorSymbol()) throw new SyntaxException("Wrong token order");
+        if (!_tk.IsNextFactorSymbol()) throw new SyntaxException("ParseFactor: Wrong token order");
         INode retVal;
 
         switch (_tk.Next.Type)
         {
             case "INT":
                 retVal = new IntVal(_tk.Next.Value);
+                _tk.SelectNext();
+                return retVal;
+            
+            case "STRING":
+                retVal = new StrVal(_tk.Next.Value);
                 _tk.SelectNext();
                 return retVal;
 

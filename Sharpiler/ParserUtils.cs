@@ -40,6 +40,37 @@ public partial class Parser
         return new If(new List<INode>() { condition, firstBlock, elseBlock });
     }
 
+    private static INode ParseStatementIdentifier()
+    {
+        if (_tk == null) throw new Exception();
+
+        Identifier leftNode = new Identifier(_tk.Next.Value);
+        _tk.SelectNext();
+
+        if (_tk.Next.Type == "ASSIGN")
+        {
+            _tk.SelectNext();
+            return new Assignment(new List<INode>() { leftNode, ParseRelativeExpression() });
+        }
+
+        if (_tk.Next.Type != "SCOPE") 
+            throw new SyntaxException("Identifier wrong token order: found " + _tk.Next.Type);
+        
+        _tk.SelectNext();
+        if (_tk.Next.Type != "TYPE")
+            throw new SyntaxException("Wrong token order: expected TYPE got " + _tk.Next.Type);
+        string varType = _tk.Next.Value;
+            
+        _tk.SelectNext();
+        if (_tk.Next.Type != "ASSIGN") return new VariableDeclaration(new List<INode>() { leftNode }, varType);
+        
+        _tk.SelectNext();
+        return new VariableDeclaration(
+            new List<INode>() { leftNode, ParseRelativeExpression() },
+            varType);
+
+    }
+
 
     private static void RemoveComment(ref string input)
     {

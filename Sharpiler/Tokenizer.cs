@@ -30,7 +30,7 @@ public class Tokenizer
 
     public bool IsNextFactorSymbol()
     {
-        return Next.Type is "INT" or "MINUS" or "PLUS" or "NOT" or "LPAREN" or "IDENTIFIER" or "READ";
+        return Next.Type is "INT" or "STRING" or "MINUS" or "PLUS" or "NOT" or "LPAREN" or "IDENTIFIER" or "READ";
     }
 
     private Token SelectInt()
@@ -60,6 +60,26 @@ public class Tokenizer
         return new Token("INT", int.Parse(currentToken));
     }
 
+    private Token SelectString()
+    {
+        string currentToken = char.ToString(_source[_position]);
+
+        while (true)
+        {
+            _position += 1;
+            if (_position >= _source.Length) throw new SyntaxException("Missing closing quote for string");
+            
+            char currentChar = _source[_position];
+            if (currentChar == '"')
+                break;
+
+            currentToken += currentChar;
+        }
+
+        _position++;
+        return new Token("STRING", currentToken);
+    }
+
     private Token SelectWord()
     {
         string currentToken = char.ToString(_source[_position]);
@@ -86,6 +106,8 @@ public class Tokenizer
 
         return currentToken switch
         {
+            "Int" => new Token("TYPE", "Int"),
+            "String" => new Token("TYPE", "String"),
             "println" => new Token("PRINT"),
             "readline" => new Token("READ"),
             "while" => new Token("WHILE"),
@@ -166,6 +188,10 @@ public class Tokenizer
                 Next = new Token("NOT");
                 _position += 1;
                 return;
+            case '.':
+                Next = new Token("DOT");
+                _position += 1;
+                return;
             case '&':
                 if (_source[_position + 1] == '&')
                 {
@@ -185,7 +211,21 @@ public class Tokenizer
                 }
 
                 throw new LexicalException($"Invalid char '{_source[_position]}'");
+            
+            case '"':
+                _position++;
+                Next = SelectString();
+                return;
+            
+            case ':':
+                if (_source[_position + 1] == ':')
+                {
+                    Next = new Token("SCOPE");
+                    _position += 2;
+                    return;
+                }
 
+                throw new LexicalException($"Invalid char '{_source[_position]}'");
 
             case '\r':
             case '\n':

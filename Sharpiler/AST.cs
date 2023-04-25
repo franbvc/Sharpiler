@@ -1,27 +1,10 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace Sharpiler;
-
-public static class SymbolTable
-{
-    private static readonly IDictionary<string, int> SymbolDictionary = new Dictionary<string, int>();
-
-    public static void Set(string key, int value)
-    {
-        SymbolDictionary[key] = value;
-    }
-
-    public static int Get(string key)
-    {
-        return SymbolDictionary[key];
-    }
-}
+﻿namespace Sharpiler;
 
 public interface INode
 {
     dynamic Value { get; set; }
     List<INode> Children { get; set; }
-    int Evaluate();
+    dynamic Evaluate();
 }
 
 class UnOp : INode
@@ -36,7 +19,7 @@ class UnOp : INode
         Children = children;
     }
 
-    public int Evaluate()
+    public dynamic Evaluate()
     {
         if (Value == '-') return -Children[0].Evaluate();
         if (Value == '!') return (Children[0].Evaluate() == 1) ? 0 : 1;
@@ -57,7 +40,25 @@ class IntVal : INode
         Children = children ?? new List<INode>();
     }
 
-    public int Evaluate()
+    public dynamic Evaluate()
+    {
+        return Value;
+    }
+}
+
+class StrVal : INode
+{
+    public dynamic Value { get; set; }
+
+    public List<INode> Children { get; set; }
+
+    public StrVal(string value, List<INode> children = null!)
+    {
+        Value = value;
+        Children = children ?? new List<INode>();
+    }
+
+    public dynamic Evaluate()
     {
         return Value;
     }
@@ -75,31 +76,37 @@ class BinOp : INode
         Children = children;
     }
 
-    public int Evaluate()
+    public dynamic Evaluate()
     {
-        switch (Value)
-        {
-            case "+":
-                return Children[0].Evaluate() + Children[1].Evaluate();
-            case "-":
-                return Children[0].Evaluate() - Children[1].Evaluate();
-            case "*":
-                return Children[0].Evaluate() * Children[1].Evaluate();
-            case "/":
-                return Children[0].Evaluate() / Children[1].Evaluate();
-            case "&&":
-                return (Children[0].Evaluate() == 1) && (Children[1].Evaluate() == 1) ? 1 : 0;
-            case "||":
-                return (Children[0].Evaluate() == 1) || (Children[1].Evaluate() == 1) ? 1 : 0;
-            case "==":
-                return (Children[0].Evaluate() == Children[1].Evaluate()) ? 1 : 0;
-            case ">":
-                return (Children[0].Evaluate() > Children[1].Evaluate()) ? 1 : 0;
-            case "<":
-                return (Children[0].Evaluate() < Children[1].Evaluate()) ? 1 : 0;
-            default:
-                throw new SemanticException("Invalid Binary Operation");
-        }
+        dynamic leftNode = Children[0].Evaluate();
+        dynamic rightNode = Children[1].Evaluate();
+
+        if (leftNode is int && rightNode is string)
+            throw new SemanticException("Invalid Binary Operation (int + string)");
+
+        if (leftNode is string)
+            return Value switch
+            {
+                "." => leftNode + rightNode,
+                _ => throw new SemanticException($"Invalid Binary Operation (string {Value} ...) ")
+            };
+
+        if (leftNode is int && rightNode is int)
+            return Value switch
+            {
+                "+" => Children[0].Evaluate() + Children[1].Evaluate(),
+                "-" => Children[0].Evaluate() - Children[1].Evaluate(),
+                "*" => Children[0].Evaluate() * Children[1].Evaluate(),
+                "/" => Children[0].Evaluate() / Children[1].Evaluate(),
+                "&&" => (Children[0].Evaluate() == 1) && (Children[1].Evaluate() == 1) ? 1 : 0,
+                "||" => (Children[0].Evaluate() == 1) || (Children[1].Evaluate() == 1) ? 1 : 0,
+                "==" => (Children[0].Evaluate() == Children[1].Evaluate()) ? 1 : 0,
+                ">" => (Children[0].Evaluate() > Children[1].Evaluate()) ? 1 : 0,
+                "<" => (Children[0].Evaluate() < Children[1].Evaluate()) ? 1 : 0,
+                _ => throw new SemanticException("Invalid Binary Operation")
+            };
+
+        throw new SemanticException("Invalid Binary Operation");
     }
 }
 
@@ -114,7 +121,7 @@ class NoOp : INode
         Children = children ?? new List<INode>();
     }
 
-    public int Evaluate()
+    public dynamic Evaluate()
     {
         return 0;
     }
@@ -131,10 +138,19 @@ class Identifier : INode
         Children = children ?? new List<INode>();
     }
 
-    public int Evaluate()
+    public dynamic Evaluate()
     {
         // retorna o valor do ID no dict
-        return SymbolTable.Get(Value);
+        (string, string) retTuple = SymbolTable.Get(Value);
+        string retType = retTuple.Item1;
+        string retVal = retTuple.Item2;
+
+        return retType switch
+        {
+            "Int" => int.Parse(retVal),
+            "String" => retVal,
+            _ => throw new SemanticException("Identifier (ST): Invalid type")
+        };
     }
 }
 
@@ -150,11 +166,58 @@ class Assignment : INode
         Children = children;
     }
 
-    public int Evaluate()
+    public dynamic Evaluate()
     {
         // Atribui o valor da direita ao dict do valor da esquerda
-        SymbolTable.Set(Children[0].Value, Children[1].Evaluate());
+        string key = Children[0].Value;
+        var val = Children[1].Evaluate();
+        string type = SymbolTable.GetType(key);
+
+        if (val is string && type != "String" ||
+            val is int && type != "Int")
+            throw new SemanticException($"Assignment: Invalid type '{type}' for '{key}'");
+
+        SymbolTable.Set(key, val.ToString(), type);
         return 0;
+    }
+}
+
+class VariableDeclaration : INode
+{
+    public dynamic Value { get; set; }
+    public List<INode> Children { get; set; }
+
+    public VariableDeclaration(List<INode> children, string value)
+    {
+        if (value != "Int" && value != "String")
+            throw new SemanticException($"VariableDeclaration: Invalid type '{value}'");
+        if (children.Count < 1) throw new SemanticException("VariableDeclaration: Wrong children amount");
+        Value = value;
+        Children = children;
+    }
+
+    public dynamic Evaluate()
+    {
+        // Adiciona o valor da esquerda ao dict
+        if (Children.Count == 1)
+        {
+            SymbolTable.Set(Children[0].Value, "_", Value);
+            return 0;
+        }
+
+        var val = Children[1].Evaluate();
+
+        switch (val)
+        {
+            case int:
+                SymbolTable.Set(Children[0].Value, val.ToString(), "Int");
+                return 0;
+            case string:
+                SymbolTable.Set(Children[0].Value, val, "String");
+                return 0;
+            default:
+                throw new SemanticException($"VarDec: type '{val.GetType()} can't exist in ST'");
+        }
     }
 }
 
@@ -170,9 +233,8 @@ class Print : INode
         Children = children;
     }
 
-    public int Evaluate()
+    public dynamic Evaluate()
     {
-        // TODO: deve passar dict como parametro se filho for id?
         Console.WriteLine(Children[0].Evaluate());
         return 0;
     }
@@ -189,7 +251,7 @@ class Read : INode
         Children = children ?? new List<INode>();
     }
 
-    public int Evaluate()
+    public dynamic Evaluate()
     {
         string input = Console.ReadLine() ?? throw new InvalidOperationException();
         return int.Parse(input);
@@ -208,7 +270,7 @@ class Block : INode
         Children = children;
     }
 
-    public int Evaluate()
+    public dynamic Evaluate()
     {
         foreach (INode child in Children)
         {
@@ -231,7 +293,7 @@ class If : INode
         Children = children;
     }
 
-    public int Evaluate()
+    public dynamic Evaluate()
     {
         if (Children[0].Evaluate() == 1) Children[1].Evaluate();
         else Children[2].Evaluate();
@@ -252,7 +314,7 @@ class While : INode
         Children = children;
     }
 
-    public int Evaluate()
+    public dynamic Evaluate()
     {
         while (Children[0].Evaluate() == 1)
         {
