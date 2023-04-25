@@ -81,13 +81,7 @@ class BinOp : INode
         dynamic leftNode = Children[0].Evaluate();
         dynamic rightNode = Children[1].Evaluate();
 
-        if (Value == ".") return leftNode + rightNode;
-        
-        switch (Value)
-        {
-            case ".":
-                return leftNode + rightNode;
-        }
+        if (Value == ".") return leftNode.ToString() + rightNode.ToString();
 
         if (leftNode is string || rightNode is string)
         {
