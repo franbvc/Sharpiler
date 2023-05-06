@@ -24,53 +24,36 @@
 
 # Sobre o projeto
 
-## Roteiro 1
+## Roteiro 7
 
 ### Diagrama Sintático
-![Diagrama Sintático](./DS_1.png)
-
-### EBNF
-EXPRESSION = number, { ("+" | "-"), number } ;  
-
-
-## Roteiro 2
-
-### Diagrama Sintático
-![Diagrama Sintático_2](./DS_2.jpeg)
-
-### EBNF 
-EXPRESSION = TERM, { ("+" | "-"), TERM } ;  
-TERM = number, { ("*" | "/"), number } ;
-
-
-## Roteiro 3
-
-### Diagrama Sintático
-![Diagrama Sintático_3](./DS_3.png)
-
-### EBNF 
-EXPRESSION = TERM, { ("+" | "-"), TERM } ;  
-TERM = FACTOR, { ("*" | "/"), FACTOR } ;  
-FACTOR = ("+" | "-") FACTOR | "(" EXPRESSION ")" | number ;
-
-## Roteiro 5
-
-### Diagrama Sintático
-![Diagrama Sintático_4](./DS_4.drawio.png)
+![Diagrama Sintático_6](./DS_6.drawio.png)
 
 ### EBNF 
 BLOCK = { STATEMENT };  
-STATEMENT = ( λ | ASSIGNMENT | PRINT), "\n" ;  
-ASSIGNMENT = IDENTIFIER, "=", EXPRESSION ;  
-PRINT = "println", "(", EXPRESSION, ")" ;  
-EXPRESSION = TERM, { ("+" | "-"), TERM } ;  
-TERM = FACTOR, { ("*" | "/"), FACTOR } ;  
-FACTOR = (("+" | "-"), FACTOR) | NUMBER | "(", EXPRESSION, ")" | IDENTIFIER ;  
+
+STATEMENT = ( λ | ASSIGNMENT | PRINT | WHILE | IF), "\n" ;  
+ASSIGNMENT = IDENTIFIER, ("::", TYPE), ("=", RELEXPRESSION) ;  
+PRINT = "println", "(", RELEXPRESSION, ")" ;  
+WHILE = "while", RELEXPRESSION, "\n", BLOCK, "end" ;  
+IF = "if", RELEXPRESSION, "\n", BLOCK, (ELSE), "end" ;  
+ELSE = "else", "\n", BLOCK;
+
+READ = "readline()";  
+RELEXPRESSION = EXPRESSION, { ("==" | ">" | "<"), EXPRESSION}  
+EXPRESSION = TERM, { ("+" | "-" | "||"), TERM } ;  
+TERM = FACTOR, { ("*" | "/" | "&&"), FACTOR } ;  
+FACTOR = (("+" | "-" | "!"), FACTOR) | NUMBER | STRING | "(", RELEXPRESSION, ")" |
+         IDENTIFIER | READ;  
+
+TYPE = "Int" | "String" ;
+
+STRING = '"', { SYMBOL }, '"';
 IDENTIFIER = LETTER, { LETTER | DIGIT | "_" } ;  
 NUMBER = DIGIT, { DIGIT } ;  
 LETTER = ( a | ... | z | A | ... | Z ) ;  
 DIGIT = ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 ) ;  
-
+SYMBOL = [^\n\t\r"] ; // Any char that is not a newline, tab, carriage return or double quote
 
 ## Roteiro 6
 
@@ -98,3 +81,61 @@ IDENTIFIER = LETTER, { LETTER | DIGIT | "_" } ;
 NUMBER = DIGIT, { DIGIT } ;  
 LETTER = ( a | ... | z | A | ... | Z ) ;  
 DIGIT = ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 ) ;  
+
+
+## Roteiro 5
+
+### Diagrama Sintático
+![Diagrama Sintático_4](./DS_4.drawio.png)
+
+### EBNF 
+BLOCK = { STATEMENT };  
+STATEMENT = ( λ | ASSIGNMENT | PRINT), "\n" ;  
+ASSIGNMENT = IDENTIFIER, "=", EXPRESSION ;  
+PRINT = "println", "(", EXPRESSION, ")" ;  
+EXPRESSION = TERM, { ("+" | "-"), TERM } ;  
+TERM = FACTOR, { ("*" | "/"), FACTOR } ;  
+FACTOR = (("+" | "-"), FACTOR) | NUMBER | "(", EXPRESSION, ")" | IDENTIFIER ;  
+IDENTIFIER = LETTER, { LETTER | DIGIT | "_" } ;  
+NUMBER = DIGIT, { DIGIT } ;  
+LETTER = ( a | ... | z | A | ... | Z ) ;  
+DIGIT = ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 ) ;  
+
+
+## Roteiro 3
+
+### Diagrama Sintático
+![Diagrama Sintático_3](./DS_3.png)
+
+### EBNF 
+EXPRESSION = TERM, { ("+" | "-"), TERM } ;  
+TERM = FACTOR, { ("*" | "/"), FACTOR } ;  
+FACTOR = ("+" | "-") FACTOR | "(" EXPRESSION ")" | number ;
+
+
+## Roteiro 2
+
+### Diagrama Sintático
+![Diagrama Sintático_2](./DS_2.jpeg)
+
+### EBNF 
+EXPRESSION = TERM, { ("+" | "-"), TERM } ;  
+TERM = number, { ("*" | "/"), number } ;
+
+
+## Roteiro 1
+
+### Diagrama Sintático
+![Diagrama Sintático](./DS_1.png)
+
+### EBNF
+EXPRESSION = number, { ("+" | "-"), number } ;  
+
+
+
+
+
+
+
+
+
