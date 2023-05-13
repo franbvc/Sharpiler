@@ -7,8 +7,8 @@ public static class WriteAsm
 {
     private static string? _outputPath;
     private static readonly string ProjectPath = Directory.GetCurrentDirectory();
-    private static readonly string HeaderPath = Path.Combine(ProjectPath, "AsmTemplate/header_template.asm");
-    private static readonly string FooterPath = Path.Combine(ProjectPath, "AsmTemplate/footer_template.asm");
+    private static readonly string HeaderPath = Path.Combine(ProjectPath, "Sharpiler/AsmTemplate/header_template.asm");
+    private static readonly string FooterPath = Path.Combine(ProjectPath, "Sharpiler/AsmTemplate/footer_template.asm");
 
     public static void Initialize(string filename)
     {

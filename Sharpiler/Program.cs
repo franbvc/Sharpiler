@@ -255,13 +255,14 @@ class Test
         try
         {
             string fileContents = File.ReadAllText(filename);
-            Console.WriteLine(filename);
             INode astRoot = Parser.Run(fileContents);
             
             // remove extension from filename
+            string? outPath = Path.GetDirectoryName(filename);
             string outFilename = Path.GetFileNameWithoutExtension(filename);
             
-            WriteAsm.Initialize(outFilename + ".asm");
+            WriteAsm.Initialize(
+                Path.Combine(outPath ?? throw new InvalidOperationException(), outFilename + ".asm"));
             astRoot.Evaluate();
             WriteAsm.WriteFooter();
         }
