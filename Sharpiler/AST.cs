@@ -34,13 +34,6 @@ class UnOp : INode
         Children = children;
     }
 
-    public dynamic EvaluatePrint()
-    {
-        if (Value == '-') return -Children[0].Evaluate();
-        if (Value == '!') return (Children[0].Evaluate() == 1) ? 0 : 1;
-
-        return Children[0].Evaluate();
-    }
 
     public dynamic Evaluate()
     {
@@ -171,20 +164,6 @@ class Identifier : INode
         Children = children ?? new List<INode>();
     }
 
-    //public dynamic EvaluatePrint()
-    //{
-    //    // retorna o valor do ID no dict
-    //    (string, string) retTuple = SymbolTable.Get(Value);
-    //    string retType = retTuple.Item1;
-    //    string retVal = retTuple.Item2;
-
-    //    return retType switch
-    //    {
-    //        "Int" => int.Parse(retVal),
-    //        "String" => retVal,
-    //        _ => throw new SemanticException("Identifier (ST): Invalid type")
-    //    };
-    //}
 
     public dynamic Evaluate()
     {
@@ -211,20 +190,6 @@ class Assignment : INode
         Children = children;
     }
 
-    //public dynamic Evaluate()
-    //{
-    //    // Atribui o valor da direita ao dict do valor da esquerda
-    //    string key = Children[0].Value;
-    //    var val = Children[1].Evaluate();
-    //    string type = SymbolTable.GetType(key);
-
-    //    if (val is string && type != "String" ||
-    //        val is int && type != "Int")
-    //        throw new SemanticException($"Assignment: Invalid type '{type}' for '{key}'");
-
-    //    SymbolTable.Set(key, val.ToString(), type);
-    //    return 0;
-    //}
 
     public dynamic Evaluate()
     {
@@ -272,32 +237,6 @@ class VariableDeclaration : INode
         return 0;
     }
 
-    //public dynamic Evaluate()
-    //{
-    //    // Adiciona o valor da esquerda ao dict
-    //    if (SymbolTable.Contains(Children[0].Value))
-    //        throw new SemanticException($"VarDec: '{Children[0].Value}' type already declared in ST");
-    //    
-    //    if (Children.Count == 1)
-    //    {
-    //        SymbolTable.Set(Children[0].Value, "_", Value);
-    //        return 0;
-    //    }
-
-    //    var val = Children[1].Evaluate();
-
-    //    switch (val)
-    //    {
-    //        case int:
-    //            SymbolTable.Set(Children[0].Value, val.ToString(), "Int");
-    //            return 0;
-    //        case string:
-    //            SymbolTable.Set(Children[0].Value, val, "String");
-    //            return 0;
-    //        default:
-    //            throw new SemanticException($"VarDec: type '{val.GetType()} can't exist in ST'");
-    //    }
-    //}
 }
 
 class Print : INode
@@ -314,11 +253,6 @@ class Print : INode
         Children = children;
     }
 
-    //public dynamic Evaluate()
-    //{
-    //    Console.WriteLine(Children[0].Evaluate());
-    //    return 0;
-    //}
 
     public dynamic Evaluate()
     {
@@ -345,11 +279,6 @@ class Read : INode
         Children = children ?? new List<INode>();
     }
 
-    //public dynamic Evaluate()
-    //{
-    //    string input = Console.ReadLine() ?? throw new InvalidOperationException();
-    //    return int.Parse(input);
-    //}
     public dynamic Evaluate()
     {
         throw new NotImplementedException("Read not implemented yet");
@@ -364,7 +293,6 @@ class Block : INode
 
     public Block(List<INode> children, char value = ' ')
     {
-        if (children.Count == 0) throw new SemanticException("Block: No Statements");
         Id = NodeIdManager.GetId();
         Value = value;
         Children = children;
@@ -372,6 +300,8 @@ class Block : INode
 
     public dynamic Evaluate()
     {
+        if (Children.Count == 0) return 0;
+        
         foreach (INode child in Children)
         {
             child.Evaluate();
@@ -394,14 +324,6 @@ class If : INode
         Value = value;
         Children = children;
     }
-
-    //public dynamic Evaluate()
-    //{
-    //    if (Children[0].Evaluate() == 1) Children[1].Evaluate();
-    //    else Children[2].Evaluate();
-
-    //    return 0;
-    //}
 
     public dynamic Evaluate()
     {
@@ -440,15 +362,6 @@ class While : INode
         Children = children;
     }
 
-    //public dynamic Evaluate()
-    //{
-    //    while (Children[0].Evaluate() == 1)
-    //    {
-    //        Children[1].Evaluate();
-    //    }
-
-    //    return 0;
-    //}
     
     public dynamic Evaluate()
     {

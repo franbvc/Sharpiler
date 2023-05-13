@@ -58,39 +58,5 @@ public partial class BinOp : INode
         { "==", () => CompareInt("==") },
     };
 
-    public dynamic EvaluatePrint()
-    {
-        dynamic leftNode = Children[0].Evaluate();
-        dynamic rightNode = Children[1].Evaluate();
-
-        if (Value == ".") return leftNode.ToString() + rightNode.ToString();
-
-        if (leftNode is string || rightNode is string)
-        {
-            if (Value == ">")
-                return string.Compare(leftNode.ToString(), rightNode.ToString()) >= 0 ? 1 : 0;
-            if (Value == "<")
-                return string.Compare(leftNode.ToString(), rightNode.ToString()) >= 0 ? 0 : 1;
-            if (Value == "==")
-                return leftNode.ToString() == rightNode.ToString() ? 1 : 0;
-        }
-
-
-        if (leftNode is int && rightNode is int)
-            return Value switch
-            {
-                "+" => Children[0].Evaluate() + Children[1].Evaluate(),
-                "-" => Children[0].Evaluate() - Children[1].Evaluate(),
-                "*" => Children[0].Evaluate() * Children[1].Evaluate(),
-                "/" => Children[0].Evaluate() / Children[1].Evaluate(),
-                "&&" => (Children[0].Evaluate() == 1) && (Children[1].Evaluate() == 1) ? 1 : 0,
-                "||" => (Children[0].Evaluate() == 1) || (Children[1].Evaluate() == 1) ? 1 : 0,
-                "==" => (Children[0].Evaluate() == Children[1].Evaluate()) ? 1 : 0,
-                ">" => (Children[0].Evaluate() > Children[1].Evaluate()) ? 1 : 0,
-                "<" => (Children[0].Evaluate() < Children[1].Evaluate()) ? 1 : 0,
-                _ => throw new SemanticException("Invalid Binary Operation")
-            };
-
-        throw new SemanticException("Invalid Binary Operation");
-    }
+   
 }
