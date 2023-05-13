@@ -1,9 +1,12 @@
-﻿namespace Sharpiler;
+﻿using Microsoft.VisualBasic.FileIO;
+using System.IO;
+
+namespace Sharpiler;
 
 public static class WriteAsm
 {
     private static string? _outputPath;
-    private const string ProjectPath = "C:/Users/franb/work/LogComp/Sharpiler/Sharpiler";
+    private static readonly string ProjectPath = Directory.GetCurrentDirectory();
     private static readonly string HeaderPath = Path.Combine(ProjectPath, "AsmTemplate/header_template.asm");
     private static readonly string FooterPath = Path.Combine(ProjectPath, "AsmTemplate/footer_template.asm");
 
