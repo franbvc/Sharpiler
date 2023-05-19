@@ -114,6 +114,8 @@ public class Tokenizer
             "end" => new Token("END"),
             "if" => new Token("IF"),
             "else" => new Token("ELSE"),
+            "function" => new Token("FUNCTION"),
+            "return" => new Token("RETURN"),
             _ => new Token("IDENTIFIER", currentToken)
         };
     }
@@ -174,6 +176,10 @@ public class Tokenizer
                 }
 
                 Next = new Token("ASSIGN");
+                _position += 1;
+                return;
+            case ',':
+                Next = new Token("COMMA");
                 _position += 1;
                 return;
             case '>':

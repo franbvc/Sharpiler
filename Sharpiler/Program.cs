@@ -37,9 +37,14 @@ public partial class Parser
                 currentNode = ParseStatementIdentifier();
                 break;
 
+            case "RETURN":
+                _tk.SelectNext();
+                currentNode = new Return(new List<INode>() { ParseRelativeExpression() });
+                break;
+
             case "PRINT":
                 _tk.SelectNext();
-                if (_tk.Next.Type != "LPAREN") throw new SyntaxException("Wrong token order");
+                CheckToken("LPAREN");
                 currentNode = new Print(new List<INode>() { ParseRelativeExpression(true) });
                 break;
 
@@ -52,7 +57,12 @@ public partial class Parser
                 _tk.SelectNext();
                 currentNode = BuildConditionalNode(ConditionalType.If);
                 break;
-
+            
+            case "FUNCTION":
+                _tk.SelectNext();
+                currentNode = ParseFunction();
+                break;
+            
             case "NEWLINE":
                 _tk.SelectNext();
                 return new NoOp();
@@ -91,21 +101,22 @@ public partial class Parser
                     currentNode = rootNode;
                     rootNode = new BinOp("==", new List<INode>() { currentNode, ParseExpression() });
                     continue;
-                
+
                 case "DOT":
                     _tk.SelectNext();
                     currentNode = rootNode;
                     rootNode = new BinOp(".", new List<INode>() { currentNode, ParseExpression() });
                     continue;
-
+                
                 case "NEWLINE":
                 case "EOF":
                     goto End;
 
+                case "COMMA":
                 case "RPAREN":
                     if (isSubExpression) goto End;
                     throw new SyntaxException("Wrong token order: missing ')'");
-
+                    
                 default:
                     throw new SyntaxException("Wrong token order: got " + _tk.Next.Type +
                                               " instead of (GT or LT or EQ)");
@@ -193,16 +204,21 @@ public partial class Parser
                 retVal = new IntVal(_tk.Next.Value);
                 _tk.SelectNext();
                 return retVal;
-            
+
             case "STRING":
                 retVal = new StrVal(_tk.Next.Value);
                 _tk.SelectNext();
                 return retVal;
 
             case "IDENTIFIER":
-                retVal = new Identifier(_tk.Next.Value);
+                string identifierValue = _tk.Next.Value;
                 _tk.SelectNext();
-                return retVal;
+                if (_tk.Next.Type != "LPAREN") return new Identifier(identifierValue);
+                
+                _tk.SelectNext();
+                List<INode> callArgs = ParseCallArgs();
+                
+                return new FunctionCall(callArgs, identifierValue);
 
             case "MINUS":
                 _tk.SelectNext();
@@ -219,17 +235,19 @@ public partial class Parser
             case "LPAREN":
                 _tk.SelectNext();
                 INode result = ParseRelativeExpression(true);
-                if (_tk.Next.Type != "RPAREN") throw new SyntaxException("Wrong token order");
+                CheckToken("RPAREN");
                 _tk.SelectNext();
                 return result;
 
             case "READ":
                 _tk.SelectNext();
-                if (_tk.Next.Type != "LPAREN") throw new SyntaxException("Wrong token order");
+                CheckToken("LPAREN");
                 _tk.SelectNext();
+                
                 INode readNode = new Read();
-                if (_tk.Next.Type != "RPAREN") throw new SyntaxException("Wrong token order");
+                CheckToken("RPAREN");
                 _tk.SelectNext();
+                
                 return readNode;
 
             default:
