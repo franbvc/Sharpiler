@@ -4,7 +4,7 @@ public interface INode
 {
     dynamic Value { get; set; }
     List<INode> Children { get; set; }
-    dynamic Evaluate(LocalSymbolTable? localSt = null);
+    dynamic Evaluate(ISymbolTable? localSt = null);
 }
 
 class UnOp : INode
@@ -19,7 +19,7 @@ class UnOp : INode
         Children = children;
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localSt)
     {
         if (Value == '-') return -Children[0].Evaluate(localSt);
         if (Value == '!') return (Children[0].Evaluate(localSt) == 1) ? 0 : 1;
@@ -40,7 +40,7 @@ class IntVal : INode
         Children = children ?? new List<INode>();
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localSt)
     {
         return Value;
     }
@@ -58,7 +58,7 @@ class StrVal : INode
         Children = children ?? new List<INode>();
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localSt)
     {
         return Value;
     }
@@ -76,8 +76,10 @@ class BinOp : INode
         Children = children;
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localStArg)
     {
+        ISymbolTable localSt = localStArg ?? new SymbolTable();
+        
         dynamic leftNode = Children[0].Evaluate(localSt);
         dynamic rightNode = Children[1].Evaluate(localSt);
 
@@ -92,7 +94,6 @@ class BinOp : INode
             if (Value == "==")
                 return leftNode.ToString() == rightNode.ToString() ? 1 : 0;
         }
-            
 
         if (leftNode is int && rightNode is int)
             return Value switch
@@ -124,7 +125,7 @@ class NoOp : INode
         Children = children ?? new List<INode>();
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localSt)
     {
         return 0;
     }
@@ -141,14 +142,10 @@ class Identifier : INode
         Children = children ?? new List<INode>();
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localStArg)
     {
-        if (localSt == null) throw new SemanticException("Identifier (ST): Local Symbol Table is null");
-        
-        (string, string) retTuple = localSt.Get(Value);
-
-        string retType = retTuple.Item1;
-        string retVal = retTuple.Item2;
+        ISymbolTable localSt = localStArg ?? new SymbolTable();
+        var (retType, retVal) = ((string,string))localSt.Get(Value);
 
         return retType switch
         {
@@ -171,13 +168,13 @@ class Assignment : INode
         Children = children;
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localStArg)
     {
-        if (localSt == null) throw new SemanticException("Assignment: Local Symbol Table is null");
+        ISymbolTable localSt = localStArg ?? new SymbolTable();
         
-        // Atribui o valor da direita ao dict do valor da esquerda
         string key = Children[0].Value;
         var val = Children[1].Evaluate(localSt);
+
         string type = localSt.GetType(key);
 
         if (val is string && type != "String" ||
@@ -185,12 +182,18 @@ class Assignment : INode
             throw new SemanticException($"Assignment: Invalid type '{type}' for '{key}'");
 
         localSt.Set(key, val.ToString(), type);
+
         return 0;
     }
 }
 
 class VariableDeclaration : INode
 {
+    /*
+     * Children[0] = Identifier
+     * Children[1] = Type
+     * Value = Type
+     */
     public dynamic Value { get; set; }
     public List<INode> Children { get; set; }
 
@@ -203,13 +206,14 @@ class VariableDeclaration : INode
         Children = children;
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localStArg)
     {
-        if (localSt == null) throw new SemanticException("VarDec: Local Symbol Table is null");
         // Adiciona o valor da esquerda ao dict
+        ISymbolTable localSt = localStArg ?? new SymbolTable();
+        
         if (localSt.Contains(Children[0].Value))
             throw new SemanticException($"VarDec: '{Children[0].Value}' type already declared in ST");
-        
+
         if (Children.Count == 1)
         {
             localSt.Set(Children[0].Value, "_", Value);
@@ -244,7 +248,7 @@ class Print : INode
         Children = children;
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localSt)
     {
         Console.WriteLine(Children[0].Evaluate(localSt));
         return 0;
@@ -262,7 +266,7 @@ class Read : INode
         Children = children ?? new List<INode>();
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localSt)
     {
         string input = Console.ReadLine() ?? throw new InvalidOperationException();
         return int.Parse(input);
@@ -280,11 +284,11 @@ class Block : INode
         Children = children;
     }
 
-    public virtual dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localSt)
     {
         if (Children.Count == 0) return 0;
         dynamic? retVal = null;
-        
+
         foreach (INode child in Children)
         {
             try
@@ -305,7 +309,6 @@ class Block : INode
     }
 }
 
-
 class If : INode
 {
     public dynamic Value { get; set; }
@@ -318,7 +321,7 @@ class If : INode
         Children = children;
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localSt)
     {
         if (Children[0].Evaluate(localSt) == 1) Children[1].Evaluate(localSt);
         else Children[2].Evaluate(localSt);
@@ -339,7 +342,7 @@ class While : INode
         Children = children;
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localSt)
     {
         while (Children[0].Evaluate(localSt) == 1)
         {
@@ -354,29 +357,29 @@ class FunctionDeclaration : INode
 {
     public dynamic Value { get; set; }
     public List<INode> Children { get; set; }
-    
+
     public FunctionDeclaration(List<INode> children, string value)
     {
         if (children.Count < 2) throw new SemanticException("FuncDec: Wrong children amount");
         if (value != "String" && value != "Int")
             throw new SemanticException($"FuncDec: Invalid type '{value}'");
-        
+
         Value = value;
         Children = children;
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localSt)
     {
         if (FuncTable.Contains(Children[0].Value))
             throw new SemanticException($"FuncDec: '{Children[0].Value}' function already declared in FT");
-        
+
         FuncTable.Set(Children[0].Value, this);
         return 0;
     }
-    
+
     public List<INode> GetParams()
     {
-        return Children.Skip(1).Take(Children.Count-2).ToList();
+        return Children.Skip(1).Take(Children.Count - 2).ToList();
     }
 }
 
@@ -384,39 +387,39 @@ class FunctionCall : INode
 {
     public dynamic Value { get; set; }
     public List<INode> Children { get; set; }
-    
+
     public FunctionCall(List<INode> children, string value)
     {
         Value = value;
         Children = children;
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localSt)
     {
         if (!FuncTable.Contains(Value))
             throw new SemanticException($"FuncCall: '{Value}' function not declared in FT");
-        
+
         FunctionDeclaration funcDec = FuncTable.Get(Value);
-        
-        if (Children.Count != funcDec.Children.Count-2)
+
+        if (Children.Count != funcDec.Children.Count - 2)
             throw new SemanticException($"FuncCall: '{Value}' function wrong parameters amount");
-        
+
         LocalSymbolTable funcSt = new LocalSymbolTable();
         List<INode> funcParams = funcDec.GetParams();
         for (int i = 0; i < funcParams.Count; i++)
         {
             var callParam = Children[i].Evaluate();
-            
+
             switch (funcParams[i].Value)
             {
                 case "Int" when callParam is int:
                     funcSt.Set(funcParams[i].Children[0].Value, callParam.ToString(), "Int");
                     continue;
-                    
+
                 case "String" when callParam is string:
                     funcSt.Set(funcParams[i].Children[0].Value, callParam, "String");
                     continue;
-                
+
                 default:
                     throw new SemanticException($"FuncCall: '{Value}' function wrong parameter type");
             }
@@ -430,7 +433,7 @@ class FunctionCall : INode
         {
             return returnException.Value;
         }
-        
+
         return 0;
     }
 }
@@ -447,7 +450,7 @@ class Return : INode
         Children = children;
     }
 
-    public dynamic Evaluate(LocalSymbolTable? localSt)
+    public dynamic Evaluate(ISymbolTable? localSt)
     {
         return Children[0].Evaluate(localSt);
     }

@@ -68,7 +68,15 @@ public partial class Parser
                 return new NoOp();
 
             default:
-                throw new SyntaxException("Wrong token order");
+                _tk.SelectNext();
+                Console.WriteLine($"next: {_tk.Next.Type}");
+                
+                _tk.SelectNext();
+                Console.WriteLine($"next: {_tk.Next.Type}");
+                
+                _tk.SelectNext();
+                Console.WriteLine($"next: {_tk.Next.Type}");
+                throw new SyntaxException($"Wrong token order: got {_tk.Next.Type}");
         }
 
         return currentNode;

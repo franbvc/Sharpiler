@@ -60,7 +60,11 @@ public partial class Parser
     {
         if (_tk == null) throw new Exception();
         List<INode> args = new List<INode>();
-        if (_tk.Next.Type == "RPAREN") return args;
+        if (_tk.Next.Type == "RPAREN")
+        {
+            _tk.SelectNext();
+            return args;
+        }
 
         while (true)
         {
